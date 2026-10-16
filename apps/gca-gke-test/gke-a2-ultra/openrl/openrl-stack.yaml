@@ -1,0 +1,137 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openrl-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-store
+  namespace: openrl-system
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.2-alpine
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: openrl-system
+  labels:
+    app: redis
+spec:
+  type: ClusterIP
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-rl-gateway
+  namespace: openrl-system
+  labels:
+    app: open-rl-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: open-rl-gateway
+  template:
+    metadata:
+      labels:
+        app: open-rl-gateway
+    spec:
+      serviceAccountName: open-rl-sa
+      containers:
+        - name: gateway
+          image: ghcr.io/gke-labs/open-rl/gateway:v0.0.4
+          imagePullPolicy: IfNotPresent
+          command: ["uv", "run", "uvicorn", "server.gateway:app", "--host", "0.0.0.0", "--port", "8000"]
+          ports:
+            - containerPort: 8000
+          env:
+            - name: REDIS_URL
+              value: "redis://redis-service:6379?max_connections=500"
+            - name: SAMPLING_BACKEND
+              value: "vllm"
+            - name: OPEN_RL_ENABLE_FFT
+              value: "false"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: open-rl-gateway-service
+  namespace: openrl-system
+  labels:
+    app: open-rl-gateway
+spec:
+  type: ClusterIP
+  selector:
+    app: open-rl-gateway
+  ports:
+    - port: 8000
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-rl-scheduler
+  namespace: openrl-system
+  labels:
+    app: open-rl-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: open-rl-scheduler
+  template:
+    metadata:
+      labels:
+        app: open-rl-scheduler
+    spec:
+      serviceAccountName: open-rl-sa
+      containers:
+        - name: scheduler
+          image: ghcr.io/gke-labs/open-rl/scheduler:v0.0.4
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: REDIS_URL
+              value: "redis://redis-service:6379"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 2Gi

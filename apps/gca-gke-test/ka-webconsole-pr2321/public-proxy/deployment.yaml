@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-console-public-proxy
+  namespace: kubeagents-system
+  labels:
+    app: web-console-public-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-console-public-proxy
+  template:
+    metadata:
+      labels:
+        app: web-console-public-proxy
+    spec:
+      containers:
+        - name: proxy
+          image: nginx:1.27-alpine
+          ports:
+            - name: https
+              containerPort: 8443
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-console-public-proxy
+  namespace: kubeagents-system
+  labels:
+    app: web-console-public-proxy
+spec:
+  type: LoadBalancer
+  selector:
+    app: web-console-public-proxy
+  ports:
+    - name: https
+      port: 443
+      targetPort: 8443
+      protocol: TCP

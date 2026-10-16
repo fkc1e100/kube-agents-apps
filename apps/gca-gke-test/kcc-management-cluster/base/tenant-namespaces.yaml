@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fleet-tenants
+  labels:
+    fleet.kubeagents.x-k8s.io/role: tenant-root
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fleet-cluster-metadata
+  namespace: fleet-tenants
+data:
+  CLUSTER_NAME: "kcc-management-cluster"
+  CLUSTER_TIER: "management-hub"
+  ENVIRONMENT: "gca-gke-test"

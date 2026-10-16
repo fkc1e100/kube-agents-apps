@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gke-cost-dashboard
+  namespace: default
+  labels:
+    app: gke-cost-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gke-cost-dashboard
+  template:
+    metadata:
+      labels:
+        app: gke-cost-dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: us-central1-docker.pkg.dev/gca-gke-test/gke-cost/purple-auditor:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_TYPE
+              value: mysql
+            - name: DB_CONN_STR
+              value: purple_admin:W2pkfgBSb7QeSMs@tcp(127.0.0.1:3306)/audit_db?parseTime=true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--port=3306"
+            - "gca-gke-test:us-central1:gke-cost-purple-db"
+          securityContext:
+            runAsNonRoot: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

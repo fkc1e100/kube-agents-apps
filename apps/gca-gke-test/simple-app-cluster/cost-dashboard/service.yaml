@@ -1,15 +1,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: gke-cost-dashboard
+  name: gke-cost-dashboard-svc
   namespace: default
   labels:
     app: gke-cost-dashboard
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: gke-cost-dashboard
   ports:
     - name: http
-      port: 8080
+      port: 80
       targetPort: 8080
+      protocol: TCP

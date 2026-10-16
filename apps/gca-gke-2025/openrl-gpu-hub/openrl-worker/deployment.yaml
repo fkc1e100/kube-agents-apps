@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openrl-worker-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openrl-gpu-worker
+  namespace: openrl-worker-system
+  labels:
+    app: openrl-worker
+    accelerator: nvidia-l4
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: openrl-worker
+  template:
+    metadata:
+      labels:
+        app: openrl-worker
+    spec:
+      serviceAccountName: openrl-gpu-sa
+      containers:
+        - name: worker
+          image: ghcr.io/gke-labs/open-rl/worker:v0.0.4
+          resources:
+            requests:
+              cpu: "4"
+              memory: 16Gi
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "8"
+              memory: 32Gi
+              nvidia.com/gpu: "1"
+      nodeSelector:
+        cloud.google.com/gke-accelerator: nvidia-l4

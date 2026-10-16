@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gemma2b-c4-jax-trainer
+  namespace: default
+  labels:
+    app: slm-trainer
+spec:
+  template:
+    metadata:
+      labels:
+        app: slm-trainer
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: trainer
+          image: gcr.io/kaggle-gpu-images/python:latest
+          command: ["python3", "-c", "import jax; print('JAX devices:', jax.devices())"]
+          resources:
+            limits:
+              google.com/tpu: "4"
+          volumeMounts:
+            - name: c4-data
+              mountPath: /mnt/c4
+      volumes:
+        - name: c4-data
+          csi:
+            driver: gcsfuse.csi.storage.gke.io
+            readOnly: true
+            volumeAttributes:
+              bucketName: tensorflow-datasets
+              mountOptions: "implicit-dirs"
