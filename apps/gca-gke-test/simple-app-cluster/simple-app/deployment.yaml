@@ -20,8 +20,8 @@ spec:
     spec:
       containers:
         - name: simple-app
-          image: us-docker.pkg.dev/google-samples/containers/gke/hello-app:1.0
-          imagePullPolicy: IfNotPresent
+          image: us-docker.pkg.dev/google-samples/containers/gke/hello-app:2.99-bad-release-tag
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080
